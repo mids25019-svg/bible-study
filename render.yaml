@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: bible-study
+    runtime: node
+    plan: free
+    buildCommand: node --test
+    startCommand: node server.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: AI_BASE_URL
+        value: https://freellmapi-hrfi.onrender.com/v1
+      - key: AI_API_KEY
+        sync: false
+      - key: APP_PASSWORD
+        generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
