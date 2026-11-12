@@ -13,7 +13,3 @@ services:
         value: https://freellmapi-hrfi.onrender.com/v1
       - key: AI_API_KEY
         sync: false
-      - key: APP_PASSWORD
-        generateValue: true
-      - key: SESSION_SECRET
-        generateValue: true

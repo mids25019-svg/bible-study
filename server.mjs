@@ -5,7 +5,6 @@ import {completePlan,planMessages} from './planner.mjs';
 import {inlineImage} from './images.mjs';
 import {publicAssets} from './public-assets.mjs';
 import {completeDepth} from './depth.mjs';
-import {createAccess} from './access.mjs';
 
 const config={baseUrl:process.env.AI_BASE_URL||'https://freellmapi-hrfi.onrender.com/v1',key:process.env.AI_API_KEY||'',textModel:'auto',imageModel:'auto',imageBaseUrl:process.env.IMAGE_BASE_URL||'',imageKey:process.env.IMAGE_API_KEY||''};
 let catalog=[];
@@ -14,11 +13,9 @@ const publicDir=new URL('./public/',import.meta.url);
 const port=Number(process.env.PORT||3000);
 const hosted=process.env.RENDER==='true'||process.env.HOST==='0.0.0.0';
 const publicOrigin=process.env.PUBLIC_ORIGIN||process.env.RENDER_EXTERNAL_URL||'';
-if(hosted&&(!process.env.APP_PASSWORD||process.env.APP_PASSWORD.length<12))throw new Error('Configura APP_PASSWORD con al menos doce caracteres antes de publicar.');
 if(hosted&&!publicOrigin)throw new Error('Configura PUBLIC_ORIGIN o RENDER_EXTERNAL_URL.');
 const allowedOrigins=new Set([`http://localhost:${port}`,`http://127.0.0.1:${port}`,...(publicOrigin?[new URL(publicOrigin).origin]:[])]);
 const allowedHosts=new Set([...allowedOrigins].map(value=>new URL(value).host));
-const access=createAccess({password:process.env.APP_PASSWORD||'',secret:process.env.SESSION_SECRET||undefined,secure:publicOrigin.startsWith('https://')});
 const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
 async function body(req){let value='';for await(const chunk of req){value+=chunk;if(value.length>100000)throw new Error('Solicitud demasiado grande.');}return JSON.parse(value||'{}');}
 async function upstream(path,payload,signal,type='text'){
@@ -53,11 +50,7 @@ const server=http.createServer(async(req,res)=>{
     if(!allowedHosts.has(req.headers.host||''))return send(res,403,{error:'Host no permitido.'});
     if(req.method==='POST'&&req.headers.origin&&!allowedOrigins.has(req.headers.origin))return send(res,403,{error:'Origen no permitido.'});
     if(url.pathname==='/health'&&req.method==='GET')return send(res,200,{status:'ok',app:'Bible study'});
-    if(url.pathname==='/api/auth'&&req.method==='GET')return send(res,200,{required:access.required,authenticated:access.authenticated(req)});
-    if(url.pathname==='/api/login'&&req.method==='POST'){const input=await body(req);res.setHeader('Set-Cookie',access.login(input.password,req.socket.remoteAddress));return send(res,200,{ok:true});}
-    if(url.pathname.startsWith('/api/')&&!access.authenticated(req))return send(res,401,{error:'Inicia sesión con tu contraseña para usar la IA.'});
-    if(url.pathname==='/api/logout'&&req.method==='POST'){res.setHeader('Set-Cookie',access.logout());return send(res,200,{ok:true});}
-    if(url.pathname==='/api/config'&&req.method==='GET')return send(res,200,{baseUrl:config.baseUrl,hasKey:!!config.key,textModel:config.textModel,imageModel:config.imageModel,imageBaseUrl:config.imageBaseUrl,imageHasKey:!!config.imageKey,passwordProtected:access.required,commands});
+    if(url.pathname==='/api/config'&&req.method==='GET')return send(res,200,{baseUrl:config.baseUrl,hasKey:!!config.key,textModel:config.textModel,imageModel:config.imageModel,imageBaseUrl:config.imageBaseUrl,imageHasKey:!!config.imageKey,commands});
     if(url.pathname==='/api/config'&&req.method==='POST'){
       const input=await body(req);const base=new URL(input.baseUrl);if(!['http:','https:'].includes(base.protocol)||base.username||base.password||base.search||base.hash)throw new Error('URL base inválida.');
       let imageBase='';if(input.imageBaseUrl){const url=new URL(input.imageBaseUrl);if(!['http:','https:'].includes(url.protocol)||url.username||url.password||url.search||url.hash)throw new Error('URL de imágenes inválida.');imageBase=url.href.replace(/\/$/,'');}
