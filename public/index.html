@@ -1,11 +1,262 @@
 <!doctype html>
-<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#743d45"><meta name="application-name" content="Bible study"><meta name="apple-mobile-web-app-title" content="Bible study"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="Estudia la Biblia con láminas explicadas y una biblioteca personal disponible sin conexión."><title>Bible study · Tu Biblia en imágenes</title><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icons/logo.svg" type="image/svg+xml"><link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><link rel="stylesheet" href="/style.css"><script src="/app.js" type="module"></script><script src="/pwa.js" type="module"></script></head>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#743d45">
+  <meta name="application-name" content="Bible study">
+  <meta name="apple-mobile-web-app-title" content="Bible study">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="description" content="Estudia la Biblia con láminas explicadas y una biblioteca personal disponible sin conexión.">
+  <title>Bible study · Tu Biblia en imágenes</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" type="module"></script>
+  <script src="/pwa.js" type="module"></script>
+</head>
 <body>
-<aside class="sidebar"><a class="brand" href="/"><img class="brand-logo" src="/icons/logo.svg" alt="Cruz y Biblia abierta" width="42" height="42"><span>Bible<span class="brand-light"> study</span><small>LA PALABRA EN IMÁGENES</small></span></a><button id="newChat" class="new-chat">＋ <span>Nuevo estudio</span><span class="shortcut">↗</span></button><div class="side-label">TU BIBLIOTECA</div><nav id="history" aria-label="Estudios guardados"></nav><div class="side-bottom"><div class="small-quote">«Lámpara es a mis pies tu palabra…»<small>Salmos 119:105</small></div><button id="settingsButton" class="connection"><span class="status-dot"></span><span>Conexión de IA<small id="connectionStatus">Configura tu API key</small></span><span>⚙</span></button><div id="pwaStatus" class="pwa-status" role="status">Preparando uso sin conexión…</div><div class="local-note">Espacio personal · guardado en este navegador</div></div></aside>
-<main><header><span>Estudio bíblico <span class="header-slash">/</span> <strong id="currentTitle">Nuevo estudio</strong></span><div class="header-actions"><button id="loginButton" class="text-button" hidden>Entrar</button><button id="logoutButton" class="text-button" hidden>Salir</button><button id="installApp" class="text-button">Instalar app</button><button id="updateApp" class="text-button" hidden>Actualizar app</button><button id="libraryButton" class="text-button">Biblioteca</button><button id="mobileNew" class="text-button mobile-only" aria-label="Nuevo estudio">＋</button><button id="mobileSettings" class="text-button mobile-only" aria-label="Conexión de IA">⚙</button><button id="export" class="text-button" disabled>↓ Exportar imágenes</button></div></header>
-<section id="welcome"><div class="eyebrow"><span></span> UN NUEVO MODO DE ACERCARTE A LA PALABRA</div><div class="hero-symbol"><img src="/icons/logo.svg" alt="Bible study" width="55" height="55"></div><h1>Cada pasaje,<br>una nueva <em>perspectiva.</em></h1><p>Escribe una cita bíblica. Descubre su historia, sus personajes<br class="desktop"> y su significado a través de imágenes.</p><div class="suggestions"><button data-citation="Éxodo 2:20">Éxodo 2:20 <span>↗</span></button><button data-citation="Salmos 23">Salmos 23 <span>↗</span></button><button data-citation="Juan 3:16">Juan 3:16 <span>↗</span></button></div><div class="section-heading"><span>12 formas de explorar un pasaje</span><button id="toggleAll" class="text-button">Deseleccionar todas</button></div><div id="commandGrid" class="command-grid"></div><p class="source-note">Comandos del reel · selecciona los que quieres generar</p></section>
-<section id="conversation" hidden aria-live="polite"><div id="messages"></div><div id="results" class="results"></div><section id="depthResults" class="depth-results"></section></section>
-<div class="composer-wrap"><div id="notice" role="status"></div><form id="composer"><div class="input-row"><span class="input-icon">▤</span><label for="citation" class="sr-only">Cita bíblica</label><input id="citation" placeholder="Escribe una cita bíblica… Ej. Éxodo 2:20" autocomplete="off" required maxlength="100"><button id="send" type="submit" aria-label="Generar estudio">↑</button><button id="stop" type="button" hidden>Detener</button></div><div class="composer-footer"><span id="selectedCount">✦ 12 comandos seleccionados</span><span>Modelo automático <span class="tiny-dot"></span></span></div></form><p class="disclaimer">Las imágenes son interpretaciones artísticas. Contrasta el estudio con tu Biblia.</p></div>
-</main>
-<dialog id="settings"><form id="settingsForm"><div class="dialog-head"><div><div class="eyebrow">TU SERVIDOR</div><h2>Conexión de IA</h2></div><button type="button" id="closeSettings" aria-label="Cerrar">×</button></div><p>Compatible con los endpoints de OpenAI. La clave permanece en la memoria del servidor local y no se guarda en el navegador.</p><label>URL base<input name="baseUrl" type="url" required placeholder="https://tu-servidor/v1"></label><label>API key<input name="key" type="password" autocomplete="off" placeholder="Introduce tu API key"></label><label>Modelo de texto<select name="textModel"><option value="auto">Automático · preferencia por capacidad</option></select></label><hr><p><strong>Generación de imágenes</strong><br>Si agregaste Cloudflare al panel de FreeLLMAPI, usa arriba la clave unificada de FreeLLMAPI y deja vacíos estos campos. El servidor elegirá el modelo de imágenes en automático. Completa estos campos solo para usar otro servidor.</p><label>URL base de imágenes (opcional)<input name="imageBaseUrl" type="url" placeholder="https://proveedor-de-imagenes/v1"></label><label>API key de imágenes<input name="imageKey" type="password" autocomplete="off" placeholder="Clave del proveedor de imágenes"></label><label>Modelo de imágenes<select name="imageModel"><option value="auto">Automático · selección de imágenes</option><option value="provider-auto">Automático del proveedor · catálogo separado</option></select></label><label>Estilo de las imágenes<select id="style"><option>Ilustración cinematográfica realista, luz cálida y detalles históricos</option><option>Acuarela editorial, tonos cálidos y composición delicada</option><option>Infografía educativa ilustrada, clara y con textos en español</option></select></label><p class="hint">Automático usa los modelos publicados por /models y prueba alternativas ante límites o fallos temporales. La prioridad se estima por nombre; no es una evaluación de calidad.</p><div id="settingsStatus" role="status"></div><div class="dialog-actions"><button type="button" id="testConnection">Guardar y detectar modelos</button><button type="submit" class="primary">Guardar conexión</button></div></form></dialog>
-<dialog id="libraryDialog"><div class="dialog-head"><h2>Mis láminas</h2><button id="closeLibrary" aria-label="Cerrar biblioteca">×</button></div><p>Guardadas en este navegador y dispositivo. Abre un estudio para ver, descargar o eliminar sus láminas.</p><div id="libraryList"></div></dialog><dialog id="exportDialog"><div class="dialog-head"><h2>Exportar imágenes</h2><button id="closeExport" aria-label="Cerrar exportación">×</button></div><label>Qué quieres exportar<select id="exportScope"><option value="all">Toda mi biblioteca guardada</option><option value="current">Solo el estudio abierto</option></select></label><label>Profundidad de las conexiones<select id="depthLevels"><option value="2">Dos niveles de conexiones</option><option value="3" selected>Tres niveles de conexiones</option></select></label><p>Normal: ZIP con las ilustraciones originales, sin texto añadido. Profunda: ZIP con las láminas explicadas, páginas de conexiones y un informe para leer sin conexión. Explora hasta siete pasajes relacionados; generar conexiones nuevas usa tu IA.</p><div class="dialog-actions"><button id="exportNormal">Descarga normal · solo imágenes</button><button id="exportDeep" class="primary">Descarga profunda</button></div></dialog><dialog id="loginDialog"><form id="loginForm"><div class="dialog-head"><h2>Tu espacio de estudio</h2><button type="button" id="closeLogin" aria-label="Cerrar inicio de sesión">×</button></div><p>Introduce tu contraseña para acceder a la generación con IA. Tu biblioteca guardada se conserva en este dispositivo.</p><label>Contraseña<input id="appPassword" type="password" autocomplete="current-password" required></label><p id="loginStatus" role="status"></p><div class="dialog-actions"><button type="submit" class="primary">Entrar</button></div></form></dialog></body></html>
+  <!-- Menú lateral -->
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="/">
+      <img class="brand-logo" src="/icons/logo.svg" alt="Cruz y Biblia abierta" width="42" height="42">
+      <span>Bible<span class="brand-light"> study</span><small>LA PALABRA EN IMÁGENES</small></span>
+    </a>
+
+    <button id="mobileMenuToggle" class="mobile-menu-toggle" aria-label="Abrir menú">
+      <span class="menu-icon">☰</span>
+    </button>
+
+    <div class="side-label">MENÚ</div>
+    <nav id="menuNav">
+      <button id="newChat" class="menu-item large-button">
+        <span class="menu-icon-large">＋</span>
+        <span class="menu-text">Nuevo estudio</span>
+      </button>
+
+      <button id="libraryButton" class="menu-item">
+        <span class="menu-icon">📚</span>
+        <span class="menu-text">Todos mis estudios</span>
+      </button>
+
+      <button id="libraryButtonDetailed" class="menu-item">
+        <span class="menu-icon">📖</span>
+        <span class="menu-text">Biblioteca</span>
+      </button>
+
+      <button id="mobileSettings" class="menu-item">
+        <span class="menu-icon">⚙</span>
+        <span class="menu-text">Conexión de IA</span>
+      </button>
+
+      <button id="settingsButton" class="menu-item">
+        <span class="menu-icon">⚙</span>
+        <span class="menu-text">Configuración</span>
+      </button>
+
+      <button id="installApp" class="menu-item">
+        <span class="menu-icon">⬇</span>
+        <span class="menu-text">Instalar app</span>
+      </button>
+    </nav>
+
+    <div class="side-bottom">
+      <div class="small-quote">
+        «Lámpara es a mis pies tu palabra…»
+        <small>Salmos 119:105</small>
+      </div>
+
+      <div id="pwaStatus" class="pwa-status" role="status">Preparando uso sin conexión…</div>
+
+      <div class="local-note">Espacio personal · guardado en este navegador</div>
+    </div>
+  </aside>
+
+  <!-- Overlay para cuando el menú está abierto en móvil -->
+  <div class="mobile-overlay" id="mobileOverlay" hidden></div>
+
+  <main>
+    <header>
+      <div class="header-brand">
+        <h1 class="header-title">Estudio Bíblico</h1>
+        <div id="currentRef" class="reference"></div>
+      </div>
+
+      <div class="header-actions">
+        <button id="mobileMenu" class="mobile-menu-button" aria-label="Abrir menú">
+          <span class="menu-icon">☰</span>
+        </button>
+        <button id="libraryButtonHeader" class="text-button">Biblioteca</button>
+        <button id="mobileNew" class="text-button mobile-only" aria-label="Nuevo estudio">＋</button>
+        <button id="mobileSettingsHeader" class="text-button mobile-only" aria-label="Conexión de IA">⚙</button>
+        <button id="export" class="text-button" disabled>↓ Exportar estudio</button>
+      </div>
+    </header>
+
+    <section id="welcome">
+      <div class="eyebrow"><span>✦</span> UN NUEVO MODO DE ACERCARTE A LA PALABRA</div>
+      <div class="hero-symbol">
+        <img src="/icons/logo.svg" alt="Bible study" width="55" height="55">
+      </div>
+      <h1>Cada pasaje,<br>una nueva <em>perspectiva.</em></h1>
+      <p>Escribe una cita bíblica. Descubre su historia, sus personajes<br class="desktop"> y su significado a través de imágenes.</p>
+      <div class="suggestions">
+        <button data-citation="Éxodo 2:20">Éxodo 2:20 <span>↗</span></button>
+        <button data-citation="Salmos 23">Salmos 23 <span>↗</span></button>
+        <button data-citation="Juan 3:16">Juan 3:16 <span>↗</span></button>
+      </div>
+      <div class="section-heading">
+        <span>Escoge las perspectivas que deseas explorar</span>
+        <button id="toggleAll" class="text-button">Seleccionar todas</button>
+      </div>
+      <div id="commandGrid" class="command-grid"></div>
+      <p class="source-note">Comandos del reel · selecciona los que quieres generar</p>
+    </section>
+
+    <section id="conversation" hidden aria-live="polite">
+      <div id="messages"></div>
+      <div id="results" class="results"></div>
+      <section id="depthResults" class="depth-results"></section>
+    </section>
+
+    <div class="composer-wrap">
+      <div id="notice" role="status"></div>
+      <form id="composer">
+        <div class="input-row">
+          <span class="input-icon">▤</span>
+          <label for="citation" class="sr-only">Cita bíblica</label>
+          <input id="citation" placeholder="Escribe una cita bíblica… Ej. Éxodo 2:20" autocomplete="off" required maxlength="100">
+          <button id="send" type="submit" aria-label="Generar estudio">↑</button>
+          <button id="stop" type="button" hidden>Detener</button>
+        </div>
+        <div class="composer-footer">
+          <span id="selectedCount">✦ 12 comandos seleccionados</span>
+          <span>Modelo automático <span class="tiny-dot"></span></span>
+        </div>
+      </form>
+      <p class="disclaimer">Las imágenes son interpretaciones artísticas.</p>
+    </div>
+  </main>
+
+  <!-- Diálogo de biblioteca -->
+  <dialog id="libraryDialog">
+    <div class="dialog-head">
+      <h2>Mis estudios</h2>
+      <button id="closeLibrary" aria-label="Cerrar biblioteca">×</button>
+    </div>
+    <p>Guardados en este navegador y dispositivo. Abre un estudio para ver, descargar o eliminar sus láminas.</p>
+    <div id="libraryList"></div>
+  </dialog>
+
+  <!-- Diálogo de exportación -->
+  <dialog id="exportDialog">
+    <div class="dialog-head">
+      <h2>¿Cómo deseas descargar tu estudio bíblico?</h2>
+      <button id="closeExport" aria-label="Cerrar">×</button>
+    </div>
+
+    <div class="export-options">
+      <div class="export-option">
+        <h3 id="exportNormalLabel">Estudio normal</h3>
+        <p class="export-description">
+          Documento Word con título, referencia, texto del pasaje, ilustración, interpretación,
+          paráfrasis, explicación, contexto histórico y conclusiones.
+        </p>
+        <button id="exportNormal" class="primary">Exportar como Word (.docx)</button>
+      </div>
+
+      <div class="export-option">
+        <h3 id="exportDeepLabel">Estudio profundo</h3>
+        <p class="export-description">
+          Documento Word con portada, análisis versículo por versículo, palabras clave,
+          referencias bíblicas, conexiones, aplicaciones y reflexiones espirituales detalladas.
+        </p>
+        <button id="exportDeep" class="primary">Exportar como Word (.docx)</button>
+      </div>
+    </div>
+
+    <div class="dialog-actions">
+      <button id="closeExportBtn">Cancelar</button>
+    </div>
+  </dialog>
+
+  <!-- Diálogo de conexión -->
+  <dialog id="settings">
+    <form id="settingsForm">
+      <div class="dialog-head">
+        <div>
+          <div class="eyebrow">TU SERVIDOR</div>
+          <h2>Conexión de IA</h2>
+        </div>
+        <button type="button" id="closeSettings" aria-label="Cerrar">×</button>
+      </div>
+
+      <p>Compatible con los endpoints de OpenAI. La clave permanece en la memoria del servidor local y no se guarda en el navegador.</p>
+
+      <label>URL base
+        <input name="baseUrl" type="url" required placeholder="https://tu-servidor/v1">
+      </label>
+      <label>API key
+        <input name="key" type="password" autocomplete="off" placeholder="Introduce tu API key">
+      </label>
+
+      <label>Modelo de texto
+        <select name="textModel">
+          <option value="auto">Automático · preferencia por capacidad</option>
+        </select>
+      </label>
+
+      <hr>
+
+      <p><strong>Generación de imágenes</strong><br>
+        Si agregaste Cloudflare al panel de FreeLLMAPI, usa arriba la clave unificada de FreeLLMAPI y deja vacíos estos campos. El servidor elegirá el modelo de imágenes en automático.</p>
+
+      <label>URL base de imágenes (opcional)
+        <input name="imageBaseUrl" type="url" placeholder="https://proveedor-de-imagenes/v1">
+      </label>
+      <label>API key de imágenes
+        <input name="imageKey" type="password" autocomplete="off" placeholder="Clave del proveedor de imágenes">
+      </label>
+      <label>Modelo de imágenes
+        <select name="imageModel">
+          <option value="auto">Automático · selección de imágenes</option>
+          <option value="provider-auto">Automático del proveedor · catálogo separado</option>
+        </select>
+      </label>
+
+      <label>Estilo de las imágenes
+        <select id="style">
+          <option value="Ilustración cinematográfica realista, luz cálida y detalles históricos">Ilustración cinematográfica realista, luz cálida y detalles históricos</option>
+          <option value="Acuarela editorial, tonos cálidos y composición delicada">Acuarela editorial, tonos cálidos y composición delicada</option>
+          <option value="Infografía educativa ilustrada, clara y con textos en español">Infografía educativa ilustrada, clara y con textos en español</option>
+        </select>
+      </label>
+
+      <p class="hint">Automático usa los modelos publicados por /models y prueba alternativas ante límites o fallos temporales.</p>
+
+      <div id="settingsStatus" role="status"></div>
+
+      <div class="dialog-actions">
+        <button type="button" id="testConnection">Guardar y detectar modelos</button>
+        <button type="submit" class="primary">Guardar conexión</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Diálogo de confirmación de borrado -->
+  <dialog id="deleteDialog">
+    <div class="dialog-head">
+      <h2 id="deleteTitle">Eliminar estudio</h2>
+      <button id="closeDelete" aria-label="Cerrar">×</button>
+    </div>
+    <p id="deleteDescription">¿Estás seguro de eliminar este estudio?</p>
+    <div class="dialog-actions">
+      <button id="cancelDelete" class="secondary">Cancelar</button>
+      <button id="confirmDelete" class="primary">Eliminar</button>
+    </div>
+  </dialog>
+</body>
+</html>

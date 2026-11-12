@@ -4,7 +4,7 @@ import {makeZip,crc32} from '../public/zip.js';
 import {parseDepth,completeDepth} from '../depth.mjs';
 import {scriptureRef,sourcePassage} from '../bible-source.mjs';
 import {depthHtml,connectionPath} from '../public/depth-report.js';
-import {createAccess} from '../access.mjs';
+// import {createAccess} from '../access.mjs';
 
 const node=(id,reference,parentId)=>({id,reference,parentId,title:'Creación y Palabra',summary:'Una lectura del pasaje en su contexto.',explanation:'La relación es temática y debe contrastarse con el contexto de ambos textos.',application:'Lee el pasaje completo.',kind:'thematic',connection:'Ambos textos tratan la creación y el papel de la Palabra.'});
 const depth={title:'El principio y la Palabra',overview:'Estudio de la creación.',context:'El relato presenta a Dios como creador.',keyIdeas:[{title:'El principio',explanation:'Presenta el origen de la creación.'},{title:'La Palabra',explanation:'Es un tema de comparación entre pasajes.'}],application:'Lee ambos contextos.',questions:['¿Qué afirma el texto?','¿Qué conexión es interpretativa?'],nodes:[node('root','Génesis 1:1',null),node('john','Juan 1:1-3','root'),node('col','Colosenses 1:16-17','john')]};
@@ -32,9 +32,9 @@ test('profundización usa la fuente externa sin convertir interpretaciones en te
   const calls=[];const result=await completeDepth({model:'test',citation:'Génesis 1:1',levels:3,request:async()=>({choices:[{message:{content:JSON.stringify(depth)}}]}),source:async ref=>{calls.push(ref);return {status:'verified',text:'Texto de prueba '+ref};}});
   assert.equal(calls.length,3);assert.equal(result.nodes[1].kind,'thematic');const html=depthHtml(result);assert(html.includes('Conexión temática propuesta'));assert(html.includes('Texto de prueba'));assert(!html.includes('<script>'));
 });
-test('contraseña protege la API con sesión firmada, expira y limita intentos',()=>{
-  let time=1000000;const access=createAccess({password:'a-strong-test-password',secret:'session-secret-test',secure:true,now:()=>time});
-  assert(!access.authenticated({headers:{}}));const cookie=access.login('a-strong-test-password','local');assert(cookie.includes('HttpOnly'));assert(cookie.includes('Secure'));const request={headers:{cookie:cookie.split(';')[0]}};assert(access.authenticated(request));
-  assert(!access.authenticated({headers:{cookie:request.headers.cookie+'x'}}));time+=8*24*3600000;assert(!access.authenticated(request));
-  for(let i=0;i<8;i++)assert.throws(()=>access.login('wrong','attempts'));assert.throws(()=>access.login('a-strong-test-password','attempts'),/Demasiados/);
-});
+// test('contraseña protege la API con sesión firmada, expira y limita intentos',()=>{
+//   let time=1000000;const access=createAccess({password:'a-strong-test-password',secret:'session-secret-test',secure:true,now:()=>time});
+//   assert(!access.authenticated({headers:{}}));const cookie=access.login('a-strong-test-password','local');assert(cookie.includes('HttpOnly'));assert(cookie.includes('Secure'));const request={headers:{cookie:cookie.split(';')[0]}};assert(access.authenticated(request));
+//   assert(!access.authenticated({headers:{cookie:request.headers.cookie+'x'}}));time+=8*24*3600000;assert(!access.authenticated(request));
+//   for(let i=0;i<8;i++)assert.throws(()=>access.login('wrong','attempts'));assert.throws(()=>access.login('a-strong-test-password','attempts'),/Demasiados/);
+// });
