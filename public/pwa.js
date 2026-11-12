@@ -29,7 +29,7 @@ install?.addEventListener('click',async()=>{
     installPrompt=null;
     await prompt.prompt();
     const choice=await prompt.userChoice;
-    if(choice.outcome==='accepted')status.textContent='Instalación solicitada.';
+    if(choice.outcome==='accepted'&&status)status.textContent='Instalación solicitada.';
     return;
   }
   const dialog=document.createElement('dialog');
@@ -49,6 +49,7 @@ install?.addEventListener('click',async()=>{
 });
 
 function connectionStatus(){
+  if(!status)return;
   status.textContent=!navigator.onLine?
     'Sin conexión · biblioteca disponible':
     navigator.serviceWorker?.controller?
@@ -76,19 +77,19 @@ if('serviceWorker' in navigator&&window.isSecureContext){
     await navigator.serviceWorker.ready;
     connectionStatus();
   }).catch(()=>{
-    status.textContent='No se pudo preparar el uso sin conexión. Recarga con Internet.';
+    if(status)status.textContent='No se pudo preparar el uso sin conexión. Recarga con Internet.';
   });
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     connectionStatus();
     if(updateRequested)location.reload();
   });
 }else{
-  status.textContent='La instalación necesita HTTPS o localhost y un navegador compatible.';
+  if(status)status.textContent='La instalación necesita HTTPS o localhost y un navegador compatible.';
 }
 
 update?.addEventListener('click',()=>{
   if(document.body.classList.contains('busy')){
-    status.textContent='Espera a que termine la generación antes de actualizar.';
+    if(status)status.textContent='Espera a que termine la generación antes de actualizar.';
     return;
   }
   if(registration?.waiting){

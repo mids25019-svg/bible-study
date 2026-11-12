@@ -1,6 +1,6 @@
 const CACHE_PREFIX='bible-study-shell-';
 const CACHE=CACHE_PREFIX+'v2';
-const SHELL=['/','/style.css','/app.js','/pwa.js','/commands.js','/infographic.js','/image-store.js','/zip.js','/depth-report.js','/manifest.webmanifest','/icons/logo.svg','/icons/icon-192.png','/icons/icon-512.png','/icons/icon-maskable-512.png','/icons/apple-touch-icon.png','/icons/favicon-32.png'];
+const SHELL=['/','/style.css','/app.js','/pwa.js','/commands.js','/infographic.js','/image-store.js','/zip.js','/depth-report.js','/docx-generator.js','/manifest.webmanifest','/icons/logo.svg','/icons/icon-192.png','/icons/icon-512.png','/icons/icon-maskable-512.png','/icons/apple-touch-icon.png','/icons/favicon-32.png'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)));

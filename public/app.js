@@ -83,7 +83,7 @@ function save(){
 }
 
 function renderHistory(){
-  for(const nav of [$('#history'),$('#libraryList')]){
+  for(const nav of [$('#history'),$('#libraryList')].filter(Boolean)){
     nav.replaceChildren();
     if(!history.length){
       nav.append(node('small','Tus estudios aparecerán aquí.','history-empty'));
@@ -146,13 +146,12 @@ function resetStudy(){
   active=null;
   $('#welcome').hidden=false;
   $('#conversation').hidden=true;
-  $('#currentTitle').textContent='Nuevo estudio';
+  const title=$('#currentTitle');if(title)title.textContent='Nuevo estudio';
   $('#export').disabled=busy||!history.length;
   $('#citation').value='';
   $('#messages').replaceChildren();
   $('#results').replaceChildren();
   $('#depthResults').replaceChildren();
-  // Actualizar referencia visible
   if(document.getElementById('currentRef')) {
     document.getElementById('currentRef').textContent='';
   }
@@ -207,7 +206,7 @@ function renderStudy(){
   $('#welcome').hidden=true;
   $('#conversation').hidden=false;
   $('#export').disabled=busy;
-  $('#currentTitle').textContent=active.citation;
+  const title=$('#currentTitle');if(title)title.textContent=active.citation;
 
   // Actualizar referencia en header
   if(document.getElementById('currentRef')) {
@@ -461,45 +460,58 @@ async function start(citation){
   finally{setBusy(false);renderStudy();}
 }
 
-// Menu lateral móvil
+// Menu lateral móvil y colapso de escritorio
 function initMobileMenu(){
   const toggleBtn=$('#mobileMenu');
   const toggleIcon=$('#mobileMenuToggle');
   const sidebar=$('#sidebar');
   const overlay=$('#mobileOverlay');
 
-  if(toggleBtn){
-    toggleBtn.addEventListener('click',()=>{
-      sidebar.classList.add('open');
+  function openMobileSidebar(){
+    sidebar.classList.add('open');
+    if(overlay){
       overlay.classList.add('show');
-    });
+      overlay.hidden=false;
+    }
   }
 
-  if(toggleIcon){
-    toggleIcon.addEventListener('click',()=>{
-      sidebar.classList.add('open');
-      overlay.classList.add('show');
-    });
-  }
-
-  if(overlay){
-    overlay.addEventListener('click',()=>{
-      sidebar.classList.remove('open');
+  function closeMobileSidebar(){
+    sidebar.classList.remove('open');
+    if(overlay){
       overlay.classList.remove('show');
-    });
+      overlay.hidden=true;
+    }
   }
 
-  // Cerrar menú al hacer clic en opciones
+  function toggleMenu(){
+    if(window.innerWidth<=700){
+      if(sidebar.classList.contains('open')){
+        closeMobileSidebar();
+      }else{
+        openMobileSidebar();
+      }
+    }else{
+      document.body.classList.toggle('sidebar-closed');
+    }
+  }
+
+  if(toggleBtn) toggleBtn.onclick=toggleMenu;
+  if(toggleIcon) toggleIcon.onclick=()=>{
+    if(window.innerWidth<=700) closeMobileSidebar();
+    else document.body.classList.toggle('sidebar-closed');
+  };
+  if(overlay) overlay.onclick=closeMobileSidebar;
+
+  // Cerrar menú al hacer clic en opciones en móvil
   document.querySelectorAll('#menuNav .menu-item').forEach(item=>{
     item.addEventListener('click',()=>{
-      sidebar.classList.remove('open');
-      overlay.classList.remove('show');
+      if(window.innerWidth<=700) closeMobileSidebar();
     });
   });
 }
 
 async function depthFor(study,signal){
-  const levels=Number($('#depthLevels').value);
+  const levels=Number($('#depthLevels')?.value || 2);
   if(study.depth&&study.depth.levels>=levels)return study.depth;
   if(!config.hasKey){
     openSettings();
@@ -661,10 +673,48 @@ function openSettings(){
   $('#settings').showModal();
 }
 
+// Botones de navegación y apertura de diálogos
+$('#newChat').onclick=()=>{
+  if(busy)return;
+  resetStudy();
+  notice('');
+  $('#citation').focus();
+};
+$('#mobileNew').onclick=()=>$('#newChat').click();
+
+function openLibrary(){
+  renderHistory();
+  $('#libraryDialog').showModal();
+}
+$('#libraryButton').onclick=openLibrary;
+if($('#libraryButtonDetailed')) $('#libraryButtonDetailed').onclick=openLibrary;
+if($('#libraryButtonHeader')) $('#libraryButtonHeader').onclick=openLibrary;
+$('#closeLibrary').onclick=()=>$('#libraryDialog').close();
+
 $('#settingsButton').onclick=openSettings;
 $('#closeSettings').onclick=()=>$('#settings').close();
 $('#mobileSettings').onclick=openSettings;
-$('#mobileNew').onclick=()=>$('#newChat').click();
+if($('#mobileSettingsHeader')) $('#mobileSettingsHeader').onclick=openSettings;
+
+// Formulario de cita y controles de entrada
+$('#composer').onsubmit=e=>{
+  e.preventDefault();
+  const value=$('#citation').value.trim();
+  if(value)start(value);
+};
+$('#stop').onclick=()=>aborter?.abort();
+
+document.querySelectorAll('[data-citation]').forEach(b=>{
+  b.onclick=()=>{
+    $('#citation').value=b.dataset.citation;
+    $('#citation').focus();
+  };
+});
+
+$('#toggleAll').onclick=()=>{
+  selected=selected.size===commands.length?new Set():new Set(commands.map(c=>c.id));
+  renderCommands();
+};
 
 async function saveSettings(){
   const form=$('#settingsForm');
@@ -688,8 +738,8 @@ async function saveSettings(){
   };
   form.elements.key.value='';
   form.elements.imageKey.value='';
-  $('#connectionStatus').textContent=result.hasKey?'API key configurada':'Configura tu API key';
-  $('.status-dot').classList.toggle('connected',result.hasKey);
+  if($('#connectionStatus')) $('#connectionStatus').textContent=result.hasKey?'API key configurada':'Configura tu API key';
+  $('.status-dot')?.classList.toggle('connected',result.hasKey);
 }
 
 $('#settingsForm').onsubmit=async e=>{
@@ -759,11 +809,11 @@ try{
   commands=config.commands||offlineCommands;
   selected=new Set(commands.map(c=>c.id));
   renderCommands();
-  $('#connectionStatus').textContent=config.hasKey?'API key configurada':'Configura tu API key';
-  $('.status-dot').classList.toggle('connected',config.hasKey);
+  if($('#connectionStatus')) $('#connectionStatus').textContent=config.hasKey?'API key configurada':'Configura tu API key';
+  $('.status-dot')?.classList.toggle('connected',config.hasKey);
 }
 catch(e){
-  $('#connectionStatus').textContent='Biblioteca local disponible';
+  if($('#connectionStatus')) $('#connectionStatus').textContent='Biblioteca local disponible';
   notice(e.message);
 }
 
