@@ -1,6 +1,6 @@
-import {buildInfographic,svgDataUrl,hasExplanations,illustrationBlob,infographicBlob} from './infographic.js';
-import {makeZip,downloadBlob} from './zip.js';
-import {depthPngFiles,depthHtml,connectionPath} from './depth-report.js';
+import {buildInfographic,svgDataUrl,hasExplanations} from './infographic.js';
+import {downloadBlob} from './zip.js';
+import {connectionPath} from './depth-report.js';
 import {storeArt,restoreArt,deleteArt,deleteStudyArt} from './image-store.js';
 import {commands as offlineCommands} from './commands.js';
 import {generateWordDocument,slug} from './docx-generator.js';
@@ -340,16 +340,6 @@ function renderCard(item,index){
     content.append(node('p','Estudio anterior: completa las explicaciones para descargar la lámina educativa.'));
   }
 
-  if(item.artSrc){
-    const normal=node('button','Descarga normal · solo imagen','requires-idle');
-    normal.disabled=busy;
-    normal.onclick=async()=>{
-      try{downloadBlob(await illustrationBlob(item),`bible-study-${slug(active.citation)}-${item.command}.png`);}
-      catch(e){notice(e.message);}
-    };
-    actions.append(normal);
-  }
-
   const remove=node('button','Eliminar lámina','requires-idle');
   remove.disabled=busy;
   remove.onclick=()=>removeSheet(item);
@@ -428,30 +418,26 @@ async function start(citation){
     renderStudy();
     save();
 
+    let imageFailed=false;
     for(let i=0;i<active.items.length;i++){
       notice(`Generando imagen ${i+1} de ${active.items.length} · ${commands.find(c=>c.id===active.items[i].command).label}`);
       try{
         await generateImage(active.items[i],i,aborter.signal);
       }catch(e){
         if(e.name==='AbortError')throw e;
-        notice(e.message);
-
-        // Check for image-specific errors that should stop further attempts
-        if(/No se detectó|401|403|modelo de imágenes|endpoint no admite/i.test(e.message)){
-          for(const item of active.items)if(!item.artSrc)item.status=e.message;
-          break;
-        }
-
-        // For 502/503/504 errors, mark as failed but continue if possible
-        if(e.status===502 || e.status===503 || e.status===504){
-          for(const item of active.items)if(!item.artSrc)item.status=e.message;
-        }
+        imageFailed=true;
+        for(const pending of active.items)if(!pending.artSrc)pending.status='Ilustración pendiente. El estudio escrito sigue disponible.';
+        break;
       }
       save();
     }
 
     const count=active.items.filter(x=>x.artSrc).length;
-    notice(`${active.items.length} láminas con explicaciones listas; ${count} ilustraciones generadas. ${count<active.items.length?'Puedes descargar los estudios escritos y reintentar las ilustraciones pendientes.':'Descarga cada lámina con todo su contenido.'}`);
+    if(imageFailed){
+      notice('La generación de imágenes se detuvo. Preparando el estudio profundo y sus conexiones…');
+      try{await depthFor(active,aborter.signal);}catch(e){if(e.name==='AbortError')throw e;notice('Estudio escrito guardado. Las conexiones profundas se prepararán al descargar: '+e.message);}
+    }
+    if(!imageFailed)notice(`${active.items.length} láminas explicadas y ${count} ilustraciones generadas. La descarga profunda incluye las conexiones entre versículos.`);
     save();
   }catch(e){
     notice(e.name==='AbortError'?'Generación detenida. Se conserva lo completado.':e.message);
@@ -530,118 +516,36 @@ async function depthFor(study,signal){
   return study.depth;
 }
 
-async function exportWordNormal(study){
-  const docxBlob=await generateWordDocument(study, {
-    title: study.citation,
-    citation: study.citation,
-    passage: study.passage || '',
-    explanation: active?.summary || study.explanation,
-    sections: study.items.flatMap(i=>i.sections||[]),
-    takeaway: study.items.map(i=>i.takeaway).filter(Boolean).join('\n\n'),
-    artSrc: study.items.find(i=>i.artSrc)?.artSrc,
-    application: study.application || '',
-    context: study.context || ''
-  });
-  downloadBlob(docxBlob, `bible-study-${slug(study.citation)}.docx`);
-}
-
-async function exportWordDeep(study){
-  // Primero generamos profundidad si no existe
-  let depth=study?.depth;
-  if(!depth){
-    try{
-      depth=await depthFor(study);
-    }catch(e){
-      notice('No se pudo generar el estudio profundo: '+e.message);
-    }
-  }
-
+async function exportWordDeep(study,signal){
+  const depth=await depthFor(study,signal);
+  const root=depth.nodes.find(n=>n.parentId===null);
   const docxBlob=await generateWordDocument({
-    title: study.title || study.citation,
+    title: depth.title,
     citation: study.citation,
-    passage: study.passage || '',
-    explanation: study.explanation || study.summary,
-    sections: study.items.flatMap(i=>i.sections||[]),
-    takeaway: study.items.map(i=>i.takeaway).filter(Boolean).join('\n\n'),
-    artSrc: study.items.find(i=>i.artSrc)?.artSrc,
-    application: study.application || '',
-    context: depth?.context || '',
-    keyIdeas: depth?.keyIdeas || [],
-    questions: depth?.questions || [],
-    nodes: depth?.nodes || []
-  }, {useDeepMode:true,coverPage:true});
+    passage: root?.source?.text ? `${root.source.text} — Reina Valera 1909` : '',
+    overview: depth.overview,
+    explanation: study.summary,
+    items: study.items || [],
+    application: depth.application,
+    context: depth.context,
+    keyIdeas: depth.keyIdeas,
+    questions: depth.questions,
+    nodes: depth.nodes.map(n=>({...n,path:connectionPath(depth,n)}))
+  }, {useDeepMode:true,coverPage:true,includeImages:false});
 
   downloadBlob(docxBlob, `bible-study-${slug(study.citation)}-profundo.docx`);
 }
 
-async function exportStudies(mode,scope){
+async function exportStudies(){
   if(busy)return;
-
-  // Cerrar diálogo de exportación
-  $('#exportDialog').close();
-
   setBusy(true);
   aborter=new AbortController();
-  let skipped=0;
-
   try{
-    const studies=scope==='all'?
-      history.map(s=>active?.id===s.id?active:structuredClone(s)):
-      active?[active]:[];
-
-    if(!studies.length)throw new Error('No hay estudios guardados para exportar.');
-
-    if(mode==='word-normal'){
-      const study=studies[0];
-      await exportWordNormal(study);
-      notice(`Exportación lista: ${studies.length} estudio(s).`);
-    }
-    else if(mode==='word-deep'){
-      const study=studies[0];
-      await exportWordDeep(study);
-      notice(`Exportación profunda lista.`);
-    }
-    else{
-      // Exportación ZIP (modo anterior)
-      const files=[];
-      for(let s=0;s<studies.length;s++){
-        if(aborter.signal.aborted)throw new DOMException('Cancelado','AbortError');
-        const study=await restoreArt(studies[s]);
-        const prefix=`${String(s+1).padStart(2,'0')}-${slug(study.citation)}`;
-        let depth;
-        if(mode==='deep')depth=await depthFor(study,aborter.signal);
-
-        for(const item of study.items){
-          if(aborter.signal.aborted)throw new DOMException('Cancelado','AbortError');
-          notice(`Preparando ${s+1}/${studies.length}: ${study.citation} · ${item.command}`);
-          if(!item.artSrc&&item.src?.startsWith('data:image/'))item.artSrc=item.src;
-          if(!item.artSrc){skipped++;continue;}
-          if(mode==='normal'){
-            files.push({name:`${prefix}/${item.command}.png`,data:await illustrationBlob(item)});
-          }else{
-            if(!hasExplanations(item)){
-              const plan=await api('plan',{citation:study.citation,commands:[item.command],style:$('#style').value},aborter.signal);
-              Object.assign(item,plan.items[0]);
-            }
-            files.push({name:`${prefix}/${item.command}-explicada.png`,data:await infographicBlob(item,study.citation,commands.find(c=>c.id===item.command)?.label)});
-          }
-        }
-
-        if(mode==='deep'){
-          files.push(...await depthPngFiles(depth,prefix));
-          files.push({name:`${prefix}/estudio-profundo.html`,data:depthHtml(depth)});
-          files.push({name:`${prefix}/estudio.json`,data:JSON.stringify({...study,items:study.items.map(({artSrc,src,...item})=>item)},null,2)});
-          const saved={...study,items:study.items.map(({artSrc,src,...item})=>item)};
-          history=[saved,...history.filter(h=>h.id!==study.id)];
-          localStorage.setItem('biblia-studies',JSON.stringify(history));
-        }
-      }
-
-      if(!files.length)throw new Error('No hay ilustraciones guardadas disponibles. Abre el estudio y genera sus ilustraciones primero.');
-      if(aborter.signal.aborted)throw new DOMException('Cancelado','AbortError');
-      downloadBlob(await makeZip(files),`bible-study-${mode==='deep'?'profundo':'imagenes'}-${scope==='all'?'biblioteca':slug(studies[0].citation)}.zip`);
-      notice(`Exportación lista: ${files.length} archivos.${skipped?` ${skipped} ilustraciones no estaban guardadas y se omitieron.`:''}`);
-    }
+    const study=active || history[0];
+    if(!study)throw new Error('No hay un estudio para descargar.');
+    notice('Preparando el documento profundo con texto y conexiones bíblicas…');
+    await exportWordDeep(study,aborter.signal);
+    notice('Descarga profunda lista.');
   }catch(e){
     notice(e.name==='AbortError'?'Exportación detenida. Los estudios completados se conservan.':e.message);
   }
@@ -773,26 +677,7 @@ $('#testConnection').onclick=async()=>{
   finally{btn.disabled=false;}
 };
 
-// Exportación - manejadores de botones
-$('#export').onclick=()=>{
-  if(busy)return;
-  $('#exportDialog').showModal();
-};
-
-$('#closeExport').onclick=()=>$('#exportDialog').close();
-
-$('#exportNormal').onclick=()=>{
-  if(busy)return;
-  exportStudies('word-normal',history.length?'all':'current');
-};
-
-$('#exportDeep').onclick=()=>{
-  if(busy)return;
-  exportStudies('word-deep',history.length?'all':'current');
-};
-
-// Cerrar diálogo de exportación
-$('#closeExportBtn').onclick=()=>$('#exportDialog').close();
+$('#export').onclick=exportStudies;
 
 // Inicializar
 initMobileMenu();

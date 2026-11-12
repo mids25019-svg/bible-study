@@ -612,6 +612,18 @@ h1 em{
   position:relative;
 }
 
+.infographic-slot{
+  aspect-ratio:auto;
+  display:block;
+}
+
+.image-slot.infographic-slot img{
+  display:block;
+  width:100%;
+  height:auto;
+  object-fit:contain;
+}
+
 .image-slot .slot-symbol{
   font-size:38px;
 }

@@ -101,7 +101,7 @@
         <button id="libraryButtonHeader" class="text-button">Biblioteca</button>
         <button id="mobileNew" class="text-button mobile-only" aria-label="Nuevo estudio">＋</button>
         <button id="mobileSettingsHeader" class="text-button mobile-only" aria-label="Conexión de IA">⚙</button>
-        <button id="export" class="text-button" disabled>↓ Exportar estudio</button>
+        <button id="export" class="text-button" disabled>↓ Descargar estudio profundo</button>
       </div>
     </header>
 
@@ -160,38 +160,6 @@
     </div>
     <p>Guardados en este navegador y dispositivo. Abre un estudio para ver, descargar o eliminar sus láminas.</p>
     <div id="libraryList"></div>
-  </dialog>
-
-  <!-- Diálogo de exportación -->
-  <dialog id="exportDialog">
-    <div class="dialog-head">
-      <h2>¿Cómo deseas descargar tu estudio bíblico?</h2>
-      <button id="closeExport" aria-label="Cerrar">×</button>
-    </div>
-
-    <div class="export-options">
-      <div class="export-option">
-        <h3 id="exportNormalLabel">Estudio normal</h3>
-        <p class="export-description">
-          Documento Word con título, referencia, texto del pasaje, ilustración, interpretación,
-          paráfrasis, explicación, contexto histórico y conclusiones.
-        </p>
-        <button id="exportNormal" class="primary">Exportar como Word (.docx)</button>
-      </div>
-
-      <div class="export-option">
-        <h3 id="exportDeepLabel">Estudio profundo</h3>
-        <p class="export-description">
-          Documento Word con portada, análisis versículo por versículo, palabras clave,
-          referencias bíblicas, conexiones, aplicaciones y reflexiones espirituales detalladas.
-        </p>
-        <button id="exportDeep" class="primary">Exportar como Word (.docx)</button>
-      </div>
-    </div>
-
-    <div class="dialog-actions">
-      <button id="closeExportBtn">Cancelar</button>
-    </div>
   </dialog>
 
   <!-- Diálogo de conexión -->
@@ -255,7 +223,6 @@
         <select id="depthLevels">
           <option value="2">2 niveles (estándar)</option>
           <option value="3">3 niveles (exhaustivo)</option>
-          <option value="1">1 nivel (rápido)</option>
         </select>
       </label>
 

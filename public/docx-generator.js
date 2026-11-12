@@ -5,7 +5,7 @@
 import { makeZip } from './zip.js';
 
 function escapeXml(str) {
-  return String(str || '').replace(/[&<>"']/g, c => ({
+  return String(str ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/g, '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
@@ -63,12 +63,14 @@ export async function generateWordDocument(study, options = {}) {
   const keyIdeas = study.keyIdeas || [];
   const questions = study.questions || [];
   const nodes = study.nodes || [];
+  const overviewText = study.overview || '';
+  const perspectives = study.items || [];
 
   // Decodificar imagen si está presente
   let imageBytes = null;
   let imageExt = 'png';
   if (includeImages && study.artSrc && typeof study.artSrc === 'string') {
-    const match = study.artSrc.match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/);
+    const match = study.artSrc.match(/^data:image\/(png|jpeg|jpg);base64,([a-zA-Z0-9+/=]+)$/);
     if (match) {
       try {
         imageExt = match[1] === 'jpg' ? 'jpeg' : match[1];
@@ -91,8 +93,8 @@ export async function generateWordDocument(study, options = {}) {
 
   // Portada o encabezado principal
   if (coverPage) {
-    paragraphs.push(p('BIBLE STUDY', { bold: true, size: 48, color: '743D45', align: 'center', spaceBefore: 400, spaceAfter: 100 }));
-    paragraphs.push(p('LA PALABRA EN IMÁGENES', { size: 18, color: '8A7568', align: 'center', spaceAfter: 600 }));
+    paragraphs.push(p('ESTUDIO BÍBLICO', { bold: true, size: 48, color: '743D45', align: 'center', spaceBefore: 400, spaceAfter: 100 }));
+    paragraphs.push(p('LECTURA PROFUNDA Y CONEXIONES', { size: 18, color: '8A7568', align: 'center', spaceAfter: 600 }));
     paragraphs.push(p(titleText, { bold: true, size: 36, color: '29201D', align: 'center', spaceAfter: 200 }));
     if (citationText && citationText !== titleText) {
       paragraphs.push(p(citationText, { italic: true, size: 24, color: '743D45', align: 'center', spaceAfter: 400 }));
@@ -108,6 +110,11 @@ export async function generateWordDocument(study, options = {}) {
   if (passageText) {
     paragraphs.push(heading('Texto Bíblico', 2));
     paragraphs.push(p(passageText, { italic: true, size: 22, color: '4A3528', spaceBefore: 60, spaceAfter: 200 }));
+  }
+
+  if (overviewText) {
+    paragraphs.push(heading('Síntesis del estudio', 2));
+    paragraphs.push(p(overviewText));
   }
 
   // Imagen DrawingML
@@ -152,6 +159,19 @@ export async function generateWordDocument(study, options = {}) {
     paragraphs.push(p(explanationText, { size: 22, spaceAfter: 180 }));
   }
 
+  if (perspectives.length) {
+    paragraphs.push(heading('Lectura y perspectivas del pasaje', 2));
+    for (const item of perspectives) {
+      if (item.title) paragraphs.push(heading(item.title, 3));
+      if (item.explanation) paragraphs.push(p(item.explanation));
+      for (const section of item.sections || []) {
+        if (section.heading) paragraphs.push(p(section.heading, {bold:true, color:'743D45', spaceBefore:100, spaceAfter:40}));
+        if (section.body) paragraphs.push(p(section.body));
+      }
+      if (item.takeaway) paragraphs.push(p(`Aplicación: ${item.takeaway}`, {italic:true}));
+    }
+  }
+
   // Secciones detalladas de las láminas
   if (Array.isArray(study.sections) && study.sections.length > 0) {
     for (const section of study.sections) {
@@ -188,6 +208,11 @@ export async function generateWordDocument(study, options = {}) {
     paragraphs.push(heading('Conexiones Bíblicas Profundas', 2));
     for (const node of nodes) {
       paragraphs.push(p(`${node.reference}: ${node.title}`, { bold: true, size: 22, color: '743D45', spaceBefore: 100, spaceAfter: 40 }));
+      if (node.path) paragraphs.push(p(`Ruta de lectura: ${node.path}`, {italic:true, size:20}));
+      if (node.source?.text) paragraphs.push(p(`${node.source.text} — Reina Valera 1909`, {italic:true, color:'4A3528'}));
+      else paragraphs.push(p('Texto de esta referencia no verificado en la fuente consultada.', {italic:true, color:'805A49'}));
+      if (node.summary) paragraphs.push(p(node.summary));
+      if (node.parentId && node.connection) paragraphs.push(p(`${node.kind === 'explicit' ? 'Referencia explícita propuesta' : 'Conexión temática propuesta'}: ${node.connection}`));
       if (node.explanation) paragraphs.push(p(node.explanation, { size: 22, spaceAfter: 80 }));
       if (node.application) paragraphs.push(p(`Aplicación: ${node.application}`, { italic: true, size: 20, color: '5A4538', spaceAfter: 120 }));
     }
@@ -251,5 +276,6 @@ ${paragraphs.join('\n')}
     files.push({ name: `word/media/image1.${imageExt}`, data: imageBytes });
   }
 
-  return await makeZip(files);
+  const zip = await makeZip(files);
+  return new Blob([zip], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
 }
