@@ -188,16 +188,30 @@ const server=http.createServer(async(req,res)=>{
         throw new Error('Prompt inválido.');
       }
 
-      const result=await withModel('image',model=>upstream('/images/generations',{model,prompt:input.prompt,n:1,size:'1024x1024'},controller.signal,'image'),controller.signal);
-
-      // El endpoint devuelve {data:[...]}. result.data es este objeto.
-      const imageData=result.data?.data?.[0];
-      let src=imageData?.b64_json?`data:image/png;base64,${imageData.b64_json}`:imageData?.url;
-      if(typeof src!=='string'||!(/^(https?:\/\/|data:image\/(png|jpeg|webp);base64,)/.test(src))){
-        throw new Error('El endpoint no devolvió una imagen compatible.');
+      let src, model;
+      try{
+        const result=await withModel('image',model=>upstream('/images/generations',{model,prompt:input.prompt,n:1,size:'1024x1024'},controller.signal,'image'),controller.signal);
+        const imageData=result.data?.data?.[0];
+        src=imageData?.b64_json?`data:image/png;base64,${imageData.b64_json}`:imageData?.url;
+        if(typeof src==='string'&&(/^(https?:\/\/|data:image\/(png|jpeg|webp);base64,)/.test(src))){
+          src=await inlineImage(src,controller.signal);
+          model=result.model;
+        }
+      }catch(err){
+        if(err.message.includes('no está anunciado para generar imágenes')) throw err;
       }
-      src=await inlineImage(src,controller.signal);
-      return send(res,200,{src,model:result.model});
+
+      if(!src){
+        try{
+          const fallbackUrl=`https://image.pollinations.ai/prompt/${encodeURIComponent(input.prompt)}?width=1024&height=1024&model=flux&nologo=true`;
+          src=await inlineImage(fallbackUrl,controller.signal);
+          model='flux (respaldo)';
+        }catch{
+          throw new Error('No se pudo generar la ilustración. Intenta de nuevo.');
+        }
+      }
+
+      return send(res,200,{src,model});
     }
 
     if(req.method==='GET'&&Object.hasOwn(publicAssets,url.pathname)){

@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,7 +9,8 @@
   <meta name="apple-mobile-web-app-title" content="Bible study">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="description" content="Estudia la Biblia con láminas explicadas y una biblioteca personal disponible sin conexión.">
+  <meta name="description"
+    content="Estudia la Biblia con láminas explicadas y una biblioteca personal disponible sin conexión.">
   <title>Bible study · Tu Biblia en imágenes</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icons/logo.svg" type="image/svg+xml">
@@ -18,6 +20,7 @@
   <script src="/app.js" type="module"></script>
   <script src="/pwa.js" type="module"></script>
 </head>
+
 <body>
   <!-- Menú lateral -->
   <aside class="sidebar" id="sidebar">
@@ -61,7 +64,23 @@
         <span class="menu-icon">⬇</span>
         <span class="menu-text">Instalar app</span>
       </button>
+
+      <button id="updateApp" class="menu-item hidden">
+        <span class="menu-icon">↑</span>
+        <span class="menu-text">Actualizar app</span>
+      </button>
     </nav>
+
+    <!-- Estado de conexión -->
+    <div class="side-status">
+      <span class="status-dot"></span>
+      <span id="connectionStatus">Configura tu API key</span>
+    </div>
+    <div id="pwaStatus" class="side-pwa-status" hidden></div>
+
+    <!-- Estudios recientes en el sidebar -->
+    <div class="side-label side-label-sm">ESTUDIOS RECIENTES</div>
+    <nav id="history" aria-label="Estudios guardados"></nav>
   </aside>
 
   <!-- Overlay para cuando el menú está abierto en móvil -->
@@ -72,6 +91,7 @@
       <div class="header-brand">
         <h1 class="header-title">Estudio Bíblico</h1>
         <div id="currentRef" class="reference"></div>
+        <div id="currentTitle" class="current-title"></div>
       </div>
 
       <div class="header-actions">
@@ -91,7 +111,8 @@
         <img src="/icons/logo.svg" alt="Bible study" width="55" height="55">
       </div>
       <h1>Cada pasaje,<br>una nueva <em>perspectiva.</em></h1>
-      <p>Escribe una cita bíblica. Descubre su historia, sus personajes<br class="desktop"> y su significado a través de imágenes.</p>
+      <p>Escribe una cita bíblica. Descubre su historia, sus personajes<br class="desktop"> y su significado a través de
+        imágenes.</p>
       <div class="suggestions">
         <button data-citation="Éxodo 2:20">Éxodo 2:20 <span>↗</span></button>
         <button data-citation="Salmos 23">Salmos 23 <span>↗</span></button>
@@ -117,7 +138,8 @@
         <div class="input-row">
           <span class="input-icon">▤</span>
           <label for="citation" class="sr-only">Cita bíblica</label>
-          <input id="citation" placeholder="Escribe una cita bíblica… Ej. Éxodo 2:20" autocomplete="off" required maxlength="100">
+          <input id="citation" placeholder="Escribe una cita bíblica… Ej. Éxodo 2:20" autocomplete="off" required
+            maxlength="100">
           <button id="send" type="submit" aria-label="Generar estudio">↑</button>
           <button id="stop" type="button" hidden>Detener</button>
         </div>
@@ -183,7 +205,8 @@
         <button type="button" id="closeSettings" aria-label="Cerrar">×</button>
       </div>
 
-      <p>Compatible con los endpoints de OpenAI. La clave permanece en la memoria del servidor local y no se guarda en el navegador.</p>
+      <p>Compatible con los endpoints de OpenAI. La clave permanece en la memoria del servidor local y no se guarda en
+        el navegador.</p>
 
       <label>URL base
         <input name="baseUrl" type="url" required placeholder="https://tu-servidor/v1">
@@ -201,7 +224,8 @@
       <hr>
 
       <p><strong>Generación de imágenes</strong><br>
-        Si agregaste Cloudflare al panel de FreeLLMAPI, usa arriba la clave unificada de FreeLLMAPI y deja vacíos estos campos. El servidor elegirá el modelo de imágenes en automático.</p>
+        Si agregaste Cloudflare al panel de FreeLLMAPI, usa arriba la clave unificada de FreeLLMAPI y deja vacíos estos
+        campos. El servidor elegirá el modelo de imágenes en automático.</p>
 
       <label>URL base de imágenes (opcional)
         <input name="imageBaseUrl" type="url" placeholder="https://proveedor-de-imagenes/v1">
@@ -218,13 +242,25 @@
 
       <label>Estilo de las imágenes
         <select id="style">
-          <option value="Ilustración cinematográfica realista, luz cálida y detalles históricos">Ilustración cinematográfica realista, luz cálida y detalles históricos</option>
-          <option value="Acuarela editorial, tonos cálidos y composición delicada">Acuarela editorial, tonos cálidos y composición delicada</option>
-          <option value="Infografía educativa ilustrada, clara y con textos en español">Infografía educativa ilustrada, clara y con textos en español</option>
+          <option value="Ilustración cinematográfica realista, luz cálida y detalles históricos">Ilustración
+            cinematográfica realista, luz cálida y detalles históricos</option>
+          <option value="Acuarela editorial, tonos cálidos y composición delicada">Acuarela editorial, tonos cálidos y
+            composición delicada</option>
+          <option value="Infografía educativa ilustrada, clara y con textos en español">Infografía educativa ilustrada,
+            clara y con textos en español</option>
         </select>
       </label>
 
-      <p class="hint">Automático usa los modelos publicados por /models y prueba alternativas ante límites o fallos temporales.</p>
+      <label>Niveles de profundidad
+        <select id="depthLevels">
+          <option value="2">2 niveles (estándar)</option>
+          <option value="3">3 niveles (exhaustivo)</option>
+          <option value="1">1 nivel (rápido)</option>
+        </select>
+      </label>
+
+      <p class="hint">Automático usa los modelos publicados por /models y prueba alternativas ante límites o fallos
+        temporales.</p>
 
       <div id="settingsStatus" role="status"></div>
 
@@ -248,4 +284,5 @@
     </div>
   </dialog>
 </body>
+
 </html>

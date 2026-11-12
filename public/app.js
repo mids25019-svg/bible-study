@@ -531,21 +531,18 @@ async function depthFor(study,signal){
 }
 
 async function exportWordNormal(study){
-  const blob=await makeZip([{
-    name: `${slug(study.citation)}.docx`,
-    data: await generateWordDocument(study, {
-      title: study.citation,
-      citation: study.citation,
-      passage: study.passage || '',
-      explanation: active?.summary || study.explanation,
-      sections: study.items.flatMap(i=>i.sections||[]),
-      takeaway: study.items.map(i=>i.takeaway).filter(Boolean).join('\n\n'),
-      artSrc: study.items.find(i=>i.artSrc)?.artSrc,
-      application: study.application || '',
-      context: study.context || ''
-    })
-  }]);
-  downloadBlob(blob, `bible-study-${slug(study.citation)}.docx`);
+  const docxBlob=await generateWordDocument(study, {
+    title: study.citation,
+    citation: study.citation,
+    passage: study.passage || '',
+    explanation: active?.summary || study.explanation,
+    sections: study.items.flatMap(i=>i.sections||[]),
+    takeaway: study.items.map(i=>i.takeaway).filter(Boolean).join('\n\n'),
+    artSrc: study.items.find(i=>i.artSrc)?.artSrc,
+    application: study.application || '',
+    context: study.context || ''
+  });
+  downloadBlob(docxBlob, `bible-study-${slug(study.citation)}.docx`);
 }
 
 async function exportWordDeep(study){
@@ -559,24 +556,22 @@ async function exportWordDeep(study){
     }
   }
 
-  const blob=await makeZip([{
-    name: `bible-study-${slug(study.citation)}-profundo.docx`,
-    data: await generateWordDocument({
-      title: study.title || study.citation,
-      citation: study.citation,
-      passage: study.passage || '',
-      explanation: study.explanation || study.summary,
-      sections: study.items.flatMap(i=>i.sections||[]),
-      takeaway: study.items.map(i=>i.takeaway).filter(Boolean).join('\n\n'),
-      artSrc: study.items.find(i=>i.artSrc)?.artSrc,
-      application: study.application || '',
-      context: depth?.context || '',
-      keyIdeas: depth?.keyIdeas || [],
-      questions: depth?.questions || [],
-      nodes: depth?.nodes || []
-    }, {useDeepMode:true,coverPage:true})
-  }]);
-  downloadBlob(blob, `bible-study-${slug(study.citation)}-profundo.docx`);
+  const docxBlob=await generateWordDocument({
+    title: study.title || study.citation,
+    citation: study.citation,
+    passage: study.passage || '',
+    explanation: study.explanation || study.summary,
+    sections: study.items.flatMap(i=>i.sections||[]),
+    takeaway: study.items.map(i=>i.takeaway).filter(Boolean).join('\n\n'),
+    artSrc: study.items.find(i=>i.artSrc)?.artSrc,
+    application: study.application || '',
+    context: depth?.context || '',
+    keyIdeas: depth?.keyIdeas || [],
+    questions: depth?.questions || [],
+    nodes: depth?.nodes || []
+  }, {useDeepMode:true,coverPage:true});
+
+  downloadBlob(docxBlob, `bible-study-${slug(study.citation)}-profundo.docx`);
 }
 
 async function exportStudies(mode,scope){
